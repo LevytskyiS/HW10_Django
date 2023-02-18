@@ -1,0 +1,18 @@
+{% extends "quoteapp/base.html" %}
+
+{% block content %}
+
+<main class="container">
+    <h1>{{ title }}</h1>
+</main>
+<ul>
+    {% for q in quotes %}
+    <li>
+        <h2>{{ q.quote }}</h2>
+        <p>{{ q.author }}</p>
+        <p>{{ q.tag }}</p>
+        <hr>
+    </li>
+    {% endfor %}
+</ul>>
+{% endblock %}
