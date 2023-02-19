@@ -9,8 +9,13 @@
     {% for q in quotes %}
     <li>
         <h2>{{ q.quote }}</h2>
-        <p>{{ q.author }}</p>
-        <p>{{ q.tag }}</p>
+        <p>by {{ q.author }}</p>
+        <p class="link-read-post"><a href="{{ q.author.get_absolute_url }}">About</a></p>
+        {% for quo in q.tag.all %}
+        <li>
+            {{ quo.name }}
+        </li>
+        {% endfor %}
         <hr>
     </li>
     {% endfor %}

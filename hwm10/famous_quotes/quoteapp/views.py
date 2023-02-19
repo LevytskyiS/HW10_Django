@@ -1,69 +1,146 @@
 from django.shortcuts import render, redirect
+from django.contrib.auth import logout, login
+from django.urls import reverse_lazy, reverse
+from django.views.generic import ListView, DetailView, CreateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
 
 from .models import Quote, Tag, Author
-from .forms import TagForm, QuoteForm
-
-menu = ["About us", "Add quote", "Contacts", "Login"]
-
-# # Create your views here.
-# class QuoteHome(DataMixin, ListView):
-#     model = Quote
+from .forms import TagForm, QuoteForm, AuthorForm, RegisterUserForm, LoginUserForm
+from .utils import DataMixin
 
 
-def main(request):
-    quotes = Quote.objects.all()
-    for quote in quotes:
-        print(quote.tag)
-    return render(
-        request,
-        "quoteapp/index.html",
-        {"quotes": quotes, "menu": menu, "title": "Main page"},
-    )
+class QuoteHome(DataMixin, ListView):
+    model = Quote
+    template_name = "quoteapp/index.html"
+    context_object_name = "quotes"
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Quotes to Scrape")
+        context = dict(list(context.items()) + list(c_def.items()))
+        return context
 
 
-def about(request):
-    return render(request, "quoteapp/about.html", {"menu": menu, "title": "About us"})
+class AddTag(LoginRequiredMixin, DataMixin, CreateView):
+    form_class = TagForm
+    template_name = "quoteapp/tag.html"
+    # login_url = reverse_lazy("quoteapp:home") - альтернатива get_success_url
+    raise_exception = True
 
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Add tag")
+        context = dict(list(context.items()) + list(c_def.items()))
+        return context
 
-def tag(request):
-    if request.method == "POST":
-        form = TagForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect(to="quoteapp:home")
-        else:
-            return render(request, "quoteapp/tag.html", {"form": form})
+    def get_success_url(self):
+        return reverse("quoteapp:home")
 
-    return render(request, "quoteapp/tag.html", {"form": TagForm()})
+    # Вместо дублирования этой функции в разных классах можно указать
+    # LOGIN_REDIRECT_URL = "/" в settings.py
 
 
 def addquote(request):
-    tags = Tag.objects.all()
+
     author = Author.objects.all()
+    tags = Tag.objects.all()
 
     if request.method == "POST":
         form = QuoteForm(request.POST)
-        print(request.POST["tags"])
-        print(Tag.objects.filter(name__in=request.POST.getlist("tags")))
-        # print(Author.objects.filter(name__in=request.POST.get("author")))
+
         if form.is_valid():
-            new_note = form.save()
+            try:
+                new_quote = form.save()
+                choice_tags = Tag.objects.filter(name__in=request.POST.getlist("tags"))
 
-            choice_tags = Tag.objects.filter(name__in=request.POST.getlist("tags"))
+                for tag in choice_tags.iterator():
+                    new_quote.tag.add(tag)
+                return redirect(to="quoteapp:home")
+            except:
+                form.add_error(None, "Quote saving error")
 
-            for tag in choice_tags.iterator():
-                new_note.tags.add(tag)
-
-            return redirect(to="quoteapp:home")
         else:
             return render(
                 request,
                 "quoteapp/addquote.html",
-                {"tags": tags, "author": author, "form": form},
+                {"form": form, "author": author, "tags": tags},
             )
 
     return render(
         request,
         "quoteapp/addquote.html",
-        {"author": author, "tags": tags, "form": QuoteForm()},
+        {"form": QuoteForm(), "author": author, "tags": tags},
     )
+
+
+def addauthor(request):
+
+    if request.method == "POST":
+        form = AuthorForm(request.POST)
+
+        if form.is_valid():
+            try:
+                form.save()
+                return redirect(to="quoteapp:home")
+            except:
+                form.add_error(None, "Quote saving error")
+
+        else:
+            return render(
+                request,
+                "quoteapp/addquote.html",
+                {"form": form},
+            )
+
+    return render(
+        request,
+        "quoteapp/addauthor.html",
+        {"form": AuthorForm()},
+    )
+
+
+class ShowPost(DataMixin, DetailView):
+    model = Author
+    template_name = "quoteapp/post.html"
+    pk_url_kwarg = "post_id"
+    context_object_name = "post"
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Post")
+        context = dict(list(context.items()) + list(c_def.items()))
+        return context
+
+
+class RegisterUser(DataMixin, CreateView):
+    form_class = RegisterUserForm
+    template_name = "quoteapp/register.html"
+    success_url = reverse_lazy("quoteapp:login")
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Registration")
+        context = dict(list(context.items()) + list(c_def.items()))
+        return context
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        return redirect("quoteapp:home")
+
+
+class LoginUser(DataMixin, LoginView):
+    form_class = LoginUserForm
+    template_name = "quoteapp/login.html"
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        c_def = self.get_user_context(title="Log in")
+        context = dict(list(context.items()) + list(c_def.items()))
+        return context
+
+
+def logoutuser(request):
+    logout(request)
+    return redirect(to="quoteapp:home")
