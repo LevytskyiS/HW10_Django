@@ -1,48 +1,56 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css"/>
-</head>
-<body>
-{% block mainmenu %}
-    <div class="header">
-        <ul id="mainmenu" class="mainmenu">
-        {% for m in menu %}
-        <li><a href="{% url m.url_name %}">{{m.title}}</a></li>
-        {% endfor %}
-            {% if request.user.is_authenticated %}
-            <li class="last">{{ user.username }} | <a href="{% url 'quoteapp:logout' %}">Log out</a></li>
-            {% else %}
-            <li class="last"><a href="{% url 'quoteapp:register' %}">Registration</a> | <a href="{% url 'quoteapp:login' %}">Log in</a></li>
-            {% endif %}        
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge"> 
+        <link rel="shortcut icon" href="{% static 'quoteapp/img/favicon.ico' %}" type="image/x-icon">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <link rel="stylesheet" href="{% static 'quoteapp/css/fontello.css' %}">
+        <link rel="stylesheet" href="{% static 'quoteapp/css/styles.css' %}">
+        <title>{{ title }}</title>
+    </head>
+    <body>
+
+    {% block mainmenu %}
+        <div class="container-sm">
+            <ul id="mainmenu" class="mainmenu">
+                {% for m in menu %}
+                <li><a href="{% url m.url_name %}">{{m.title}}</a></li>
+                {% endfor %}
+                {% if request.user.is_authenticated %}
+                <li class="last">{{ user.username }} | <a href="{% url 'quoteapp:logout' %}">Log out</a></li>
+                {% else %}
+                <li class="last"><a href="{% url 'quoteapp:register' %}">Registration</a> | <a href="{% url 'quoteapp:login' %}">Log in</a></li>
+                {% endif %}        
+            </ul>
+            <div class="clear"></div>
+        </div>
+    {% endblock mainmenu %}
+
+    <div class="container-sm">
+
+    {% block content %}
+    {% endblock %}
+
+    {% if page_obj.has_other_pages %}
+    <nav class="list-pages">
+        <ul>
+            {% for p in paginator.page_range %}
+            {% if page_obj.number == p %}
+            <li class="page-num page-num-selected">{{ p }}</li>
+            {% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2 %}
+            <li>
+                <a href="?page={{ p }}">{{ p }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
         </ul>
-        <div class="clear"></div>
+    </nav>
+    {% endif %}
     </div>
-{% endblock mainmenu %}
 
-<div class="content-text">
-
-{% block content %}
-{% endblock %}
-
-{% if page_obj.has_other_pages %}
-<nav class="list-pages">
-    <ul>
-        {% for p in paginator.page_range %}
-        {% if page_obj.number == p %}
-        <li class="page-num page-num-selected">{{ p }}</li>
-        {% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2 %}
-        <li>
-            <a href="?page={{ p }}">{{ p }}</a>
-        </li>
-        {% endif %}
-        {% endfor %}
-    </ul>
-</nav>
-{% endif %}
-</div>
-
-</body>
+        <script src="{% static 'quoteapp/js/bootstrap.bundle.min.js' %}"></script>
+    </body>
 </html>

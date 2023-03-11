@@ -3,7 +3,9 @@ from django.contrib.auth import logout, login
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, DetailView, CreateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordResetView
+from django.contrib.messages.views import SuccessMessageMixin
+
 
 from .models import Quote, Tag, Author
 from .forms import TagForm, QuoteForm, AuthorForm, RegisterUserForm, LoginUserForm
@@ -144,3 +146,14 @@ class LoginUser(DataMixin, LoginView):
 def logoutuser(request):
     logout(request)
     return redirect(to="quoteapp:home")
+
+
+class ResetPasswordView(SuccessMessageMixin, PasswordResetView):
+    template_name = "quoteapp/password_reset.html"
+    email_template_name = "quoteapp/password_reset_email.html"
+    html_email_template_name = "quoteapp/password_reset_email.html"
+    success_url = reverse_lazy("quoteapp:password_reset_done")
+    success_message = (
+        "An email with instructions to reset your password has been sent to %(email)s."
+    )
+    subject_template_name = "quoteapp/password_reset_subject.txt"
