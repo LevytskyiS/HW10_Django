@@ -52,15 +52,12 @@ def addquote(request):
         form = QuoteForm(request.POST)
 
         if form.is_valid():
-            try:
-                new_quote = form.save()
-                choice_tags = Tag.objects.filter(name__in=request.POST.getlist("tags"))
+            new_quote = form.save()
+            choice_tags = Tag.objects.filter(name__in=request.POST.getlist("tags"))
 
-                for tag in choice_tags.iterator():
-                    new_quote.tag.add(tag)
-                return redirect(to="quoteapp:home")
-            except:
-                form.add_error(None, "Quote saving error")
+            for tag in choice_tags.iterator():
+                new_quote.tag.add(tag)
+            return redirect(to="quoteapp:home")
 
         else:
             return render(
